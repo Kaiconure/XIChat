@@ -15,9 +15,9 @@ API keys are issued based on your player/character/toon name, linkshell name, an
 Matching messages are sent to a custom web service, which handles message normalization/de-duplication, and multicasting.
 
 - **Normalization** - This breaks the message down into a basic representation, independent of variables such as time zone and linkshell slot. This offers several advantages, including the ability to "de-dupe" messages. It's what allows you to crowdsource messages across any number of players in your linkshells to ensure zero downtime. *Note: De-duplication does not currently handle distinguishing between language filtered and non-language filtered messages. For this reason, I recommend turning off language filters for anyone running the addon with an API key.*
-- **Multicasting** - The XIChat service will take any matching message sent with your API key, and re-broadcast it to all configured destinations. This means your Discord or Slack access tokens are **never** sent to anyone in your LS; it's configured once on your account, and XIChat's own API keys handle the rest.
+- **Multicasting** - The XIChat service will take any matching message sent with your API key, and re-broadcast it to all configured destinations. This means your Discord or Slack access tokens are **never** sent to anyone in your LS; it's configured one time on your account, and XIChat's own API keys handle the rest.
 
-**API keys should be treated like passwords.** Keep them save
+**API keys should be treated like passwords.** Keep them safe.
 
 ## FAQs
 
