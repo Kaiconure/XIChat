@@ -51,7 +51,7 @@ end
 function loadSettings(fileName)
     if addon_state.player and addon_state.player.name then
         addon_state.settings = settings_manager:load(addon_state.player.name)
-        writeJsonToFile('./data/%s.processed.json':format(addon_state.player.name), addon_state.settings)
+        --writeJsonToFile('./licenses/%s.processed.json':format(addon_state.player.name), addon_state.settings)
     else
         addon_state.settings = nil
     end

@@ -23,7 +23,7 @@ function manager:load(player_name)
     end
 
     -- Construct the player's settings file name and verify it exists
-    local file_name = './data/%s.json':format(player_name)
+    local file_name = './licenses/%s.json':format(player_name)
     local file = files.new(file_name)
     if not file:exists() then
         return self:empty(player_name)
