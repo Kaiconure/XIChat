@@ -21,6 +21,7 @@ Matching messages are sent to a custom web service, which handles message normal
 
 ## FAQs
 
+- **How do I install my license?** Copy your license file into the `licenses` folder under `Windower4/addons/XIChat`. Either add XIChat to your init.txt, or load the addon manually with `lua load xichat`.
 - **Someone in my LS leaked their API key/license. What do I do?** Each individual license can be revoked on the server. I am working on a way for you to self-revoke keys, but for now you can just let me know. It's worth noting that the API keys are designed to only work for the player/linkshell it was assigned to.
 - **I want to set up another destination. How do I do that?** Let me know. Slack and Discord are already supported, so that's easy. If you want something else (SMS, TikTok, etc), let's have a conversation. This would *not* require addon or license updates, multicast is handled 100% on the server side.
 - **How much does it cost?** I'll give out a few free licenses to people in my own linkshells. I may also give out limited term trial licenses if you want to try it out. However, it costs me money to host all of this stuff and the cost only increases with use. I don't know what the fee will be, but there will need to be *something* in order for me to justify the hosting cost. I'm thinking somewhere in the realm of $25/year for five licenses per linkshell.
