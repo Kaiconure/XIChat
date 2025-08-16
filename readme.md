@@ -1,6 +1,6 @@
 ## Overview
 
-XIChat is an addon for FFXI and Windower 4, which servers as the client side of a service that allows for linkshell chat to be mirrored to any number of destinations. The currently supported destinations are Slack and Discord, but new ones can be added at any time without updating the client addon (it's all handled on the server).
+XIChat is an addon for FFXI and Windower 4, which serves as the client side of a service that allows for linkshell chat to be mirrored to any number of destinations. The currently supported destinations are Slack and Discord, but new ones can be added at any time without updating the client addon (it's all handled on the server).
 
 XIChat uses secure HTTP (SSL/HTTPS) via a custom-developed native C++ DLL. As far as I am aware, this is the first networking implementation available to Windower addons that allows for secure communication over the internet.
 
