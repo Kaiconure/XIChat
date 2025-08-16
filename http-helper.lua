@@ -1,5 +1,6 @@
-local HTTP_DLL_VERSION = '10'
-local HTTP_DLL_NAME = 'windower_http%s':format(HTTP_DLL_VERSION)
+local HTTP_DLL_VERSION  = '10'
+local HTTP_DLL_NAME     = 'windower_http%s':format(HTTP_DLL_VERSION)
+local ADDON_PATH        = windower.addon_path:gsub('\\', '/'):gsub('//', '/')
 
 package.cpath = package.cpath .. ';' .. (ADDON_PATH .. 'dll/?.dll')
 

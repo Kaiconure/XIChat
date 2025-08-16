@@ -14,7 +14,6 @@ ADDON_NAME       = 'XIChat'
 ADDON_SHORT_NAME = 'xic'
 ADDON_AUTHOR     = '@Kaiconure'
 ADDON_COMMANDS   = {ADDON_SHORT_NAME, ADDON_NAME}
-ADDON_PATH       = windower.addon_path:gsub('\\', '/'):gsub('//', '/')
 
 ---------------------------------------------------------------------
 -- This is where we send the above info to Windower. You shouldn't
