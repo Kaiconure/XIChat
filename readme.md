@@ -1,21 +1,12 @@
-# XIChat
-
-## STOP. READ THIS FIRST.
-You will **NEED** to install the following Visual C++ 2022 x86 Redistributable from Microsoft (if you don't have it already) to avoid crashing the game upon loading XIChat.
-
-- https://aka.ms/vs/17/release/vc_redist.x86.exe
-
-You can read more about what this is [here](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170), but in short it's a special package Microsoft releases to allow execution of native code that was built in a recent version of their developer tools. If you run the installer, it will tell you if you've already got it on your system. _Note that you may be asked to restart your computer after installing these runtimes._
-
-You *may* need to install the .Net Framework 4.7.2 redistributable as well (this is also from Microsoft). You can get that [here](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net472-web-installer). There's a high likelihood you've already got this (or a newer version) already, but you can verify that by running the installer.
-
 ## Overview
 
 XIChat is an addon for FFXI and Windower 4, which servers as the client side of a service that allows for linkshell chat to be mirrored to any number of destinations. The currently supported destinations are Slack and Discord, but new ones can be added at any time without updating the client addon (it's all handled on the server).
 
 XIChat uses secure HTTP (SSL/HTTPS) via a custom-developed native C++ DLL. As far as I am aware, this is the first networking implementation available to Windower addons that allows for secure communication over the internet.
 
-**Note: Because this addon requires an online service, API keys are required for it to work.**
+You can get the latest release [here](https://github.com/Kaiconure/XIChat/releases).
+
+*Note: Because this addon uses an online service, API keys are required for it to work.*
 
 ## How does it work?
 
