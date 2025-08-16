@@ -1,11 +1,11 @@
 # XIChat
 
 ## STOP. READ THIS FIRST.
-You will **NEED** to install the following Visual C++ 2022 Redistributable from Microsoft (if you don't have it already) to avoid potentially crashing the game when loading the XIChat addon:
+You will **NEED** to install the following Visual C++ 2022 Redistributable (x86) from Microsoft (if you don't have it already) to avoid potentially crashing the game when loading the XIChat addon:
 
 - https://aka.ms/vs/17/release/vc_redist.x86.exe
 
-You can read more about what this is [here](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170). In short, it's a special package Microsoft releases to allow execution of native code that was built in a recent version of their developer tools.
+You can read more about what this is [here](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170). In short, it's a special package Microsoft releases to allow execution of native code that was built in a recent version of their developer tools. 
 
 You *may* also need to install the .Net Framework 4.7.2 redistributable (also from Microsoft), available [here](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net472-web-installer). If you get a warning about having a newer version already installed, you should be good.
 
