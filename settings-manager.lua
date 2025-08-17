@@ -6,7 +6,8 @@ local json  = require('jsonlua')    -- Lets us work with JSON
 function manager:empty(player_name)
     return {
         player_name = player_name,
-        linkshells = {}
+        linkshells = {},
+        config = {}
     }
 end
 
@@ -66,6 +67,19 @@ function manager:load(player_name)
 
     result.linkshell_count = num_results
     result.service_host = type(settings.service_host) == 'string' and settings.service_host or 'xichat.kaikaiju.com'
+
+    result.config = { verbose = false }
+    local config_file_name = './config/main.json'
+    local config_file = files.new(config_file_name)
+    if config_file:exists() then
+       local config_text = config_file:read()
+       if config_text then
+            result.config = json.parse(config_text)
+            if type(result.config) ~= 'table' then
+                result.config = {}
+            end
+        end
+    end
 
     return result
 end

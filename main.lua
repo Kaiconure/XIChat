@@ -241,12 +241,14 @@ function MessageSenderCoRoutine()
                     }
 
                     local response = http.send_request(request)
-                    -- print('success: %s,\n\tstatus: %d,\n\tpayload: [%s]\n\theaders: [%s]':format(
-                    --     response.success and 'yes' or 'no',
-                    --     response.status,
-                    --     response.payload or 'n/a',
-                    --     response.headers or 'n/a'
-                    -- ))
+                    if settings.config.verbose then
+                        print('%s queued payload:\r\n  Player: %s\r\n  Linkshell: %s\r\n  Message: [%s]':format(
+                            response and response.success and 'Successfully' or 'Unsuccessfully',
+                            item.player_name,
+                            item.linkshell_name,
+                            item.message
+                        ))
+                    end
                 end
             end
 
