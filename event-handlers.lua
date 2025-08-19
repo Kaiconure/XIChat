@@ -120,6 +120,17 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
     end
 end
 
+function addon_onIncomingChunk(id, original, modified, injected, blocked)
+	if id == 0x00B then
+        addon_state.items_initialized = false
+    elseif id == 0x00A then
+		addon_state.items_initialized = false
+	elseif id == 0x01D and not addon_state.items_initialized then
+        -- Items have been loaded
+        addon_state.items_initialized = true
+	end
+end
+
 function addon_onAddonCommand(command, ...)
     --
     -- An event handler for when the addon receives a command

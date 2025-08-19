@@ -23,6 +23,11 @@ CommandHandlers['colortest'] = function (...)
 end
 
 CommandHandlers['lslist'] = function(...)
-    print('LS1: %s %s':format(addon_state.ls1 and addon_state.ls1.name or '<none>', addon_state.ls1 and addon_state.ls1.type or ''))
-    print('LS2: %s %s':format(addon_state.ls2 and addon_state.ls2.name or '<none>', addon_state.ls2 and addon_state.ls2.type or ''))
+    writeMessage('Tracked Linkshells:')
+    writeMessage('  Slot #1: %s %s':format(
+        colorize(ChatColors.green, addon_state.ls1 and addon_state.ls1.name or '<none>'),
+        colorize(ChatColors.yellow, addon_state.ls1 and addon_state.ls1.type or '')))
+    writeMessage('  Slot #2: %s %s':format(
+        colorize(ChatColors.green, addon_state.ls2 and addon_state.ls2.name or '<none>'),
+        colorize(ChatColors.yellow, addon_state.ls2 and addon_state.ls2.type or '')))
 end

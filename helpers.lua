@@ -145,6 +145,10 @@ findEquippedLinkshells = function(player, items)
     local result = {}
     local results_by_name = {}
 
+    if not addon_state.items_initialized then
+        return
+    end
+
     player = player or windower.ffxi.get_player()
     if player then
         items = items or windower.ffxi.get_items()        

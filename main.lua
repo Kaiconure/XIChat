@@ -14,7 +14,7 @@ addon_state =
     settings = nil,
     zone_time = 0,
     last_ls_check = 0,
-    messages = {}
+    items_initialized = windower.ffxi.get_info().logged_in
 }
 
 ---------------------------------------------------------------------
@@ -68,12 +68,33 @@ function queryEquippedLinkshells(context, force)
     -- However, this should be a non-issue because we double-check equipped linkshells
     -- before sending out messages.
 
+    -- Don't mess with equipped linkshell state if items haven't been initialized yet
+    if not addon_state.items_initialized then
+        return
+    end
+
     local player = windower.ffxi.get_player()
     if not player then
         return
     end
 
     local linkshells, by_name = findEquippedLinkshells()
+
+    -- If there are no linkshells equipped, we'll just clear things out and
+    -- return. This prevents some query spam during and after zoning.
+    if not linkshells then
+        addon_state.ls1name = nil
+        addon_state.ls1 = nil
+
+        addon_state.ls2name = nil
+        addon_state.ls2 = nil
+
+        --print('none equipped')
+
+        return
+    end
+
+    --print('%d equipped':format(#linkshells))
 
     local ls1 = addon_state.ls1 and by_name and by_name[addon_state.ls1.name]
     local ls2 = addon_state.ls2 and by_name and by_name[addon_state.ls2.name]
@@ -104,9 +125,9 @@ function queryEquippedLinkshells(context, force)
         end
     end
 
-    --print('queryEquippedLinkshells: %s (force=%s)':format(context or 'any', force and 'true' or 'false'))
-
+    -- The query is unreliable shortly after zoning
     addon_state.last_ls_check = os.clock()
+    writeMessage(colorize(ChatColors.gray, 'Querying equipped linkshells...'))
     windower.send_command('input /lsmes; wait 0.5; input /ls2mes;')
 end
 
@@ -132,44 +153,45 @@ AUTOTRANSLATE_END     = string.char(239, 40)
 AUTOTRANSLATE_START_GSUB  = AUTOTRANSLATE_START
 AUTOTRANSLATE_END_GSUB    = string.char(239) .. '%('   -- Character 40 is a control character for gsub (open paren), so it needs special handling
 
-MessageQueue = {
-}
-
 function QueryLinkshellStateCoRoutine()
     while true do
-        local player = windower.ffxi.get_player()
-        if player then
-            local force = false
-            local clear = false
-            local linkshells, by_name = findEquippedLinkshells()
+        if addon_state.items_initialized then
+            local player = windower.ffxi.get_player()
+            if player then
+                local force = false
+                local clear = false
+                local linkshells, by_name = findEquippedLinkshells()
 
-            if linkshells ~= nil then
-                local count = #linkshells
-                local count_tracked = 0
+                if linkshells ~= nil then
+                    local count = #linkshells
+                    local count_tracked = 0
 
-                if addon_state.ls1 ~= nil and addon_state.ls2 ~= nil then
-                    -- Both are set, two are tracked
-                    count_tracked = 2
-                elseif addon_state.ls1 == nil and addon_state.ls2 == nil then
-                    -- Both are nil, none tracked
-                    count_tracked = 0
+                    if addon_state.ls1 ~= nil and addon_state.ls2 ~= nil then
+                        -- Both are set, two are tracked
+                        count_tracked = 2
+                    elseif addon_state.ls1 == nil and addon_state.ls2 == nil then
+                        -- Both are nil, none tracked
+                        count_tracked = 0
+                    else
+                        -- The only option is that one or the other is set, one tracked
+                        count_tracked = 1
+                    end
+
+                    force = count ~= count_tracked
+
+                    queryEquippedLinkshells('query_worker', force)
                 else
-                    -- The only option is that one or the other is set, one tracked
-                    count_tracked = 1
-                end
+                    addon_state.ls1name = nil
+                    addon_state.ls1 = nil
+                    addon_state.ls2name = nil
+                    addon_state.ls2 = nil
+                end            
+            end
 
-                force = count ~= count_tracked
-
-                queryEquippedLinkshells('query_worker', force)
-            else
-                addon_state.ls1name = nil
-                addon_state.ls1 = nil
-                addon_state.ls2name = nil
-                addon_state.ls2 = nil
-            end            
+            coroutine.sleep(10)
+        else
+            coroutine.sleep(2)
         end
-
-        coroutine.sleep(10)
     end
 end
 
@@ -182,12 +204,6 @@ function MessageSenderCoRoutine()
     -- addon_state.processor_running = true
 
     while true do
-        -- local linkshells
-        -- local linkshells_by_name
-
-        -- if #MessageQueue > 0 then
-        --     linkshells, linkshells_by_name = findEquippedLinkshells()
-        -- end
         local settings = addon_state.settings
         local num_sent = 0
 
