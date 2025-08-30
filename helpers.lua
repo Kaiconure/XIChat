@@ -122,8 +122,8 @@ function makePortableTimestamp()
     return os.date("!%Y-%m-%dT%H:%M:%SZ")
 end
 
-local LINKSHELL_BAG_IDS         = { 0, 6, 7 }
-local LINKSHELL_BAG_NAMES_BY_ID = { [0] = 'inventory', [6] = 'sack', [7] = 'case' }
+local LINKSHELL_BAG_IDS         = { 0, 5, 6, 7 }
+local LINKSHELL_BAG_NAMES_BY_ID = { [0] = 'inventory', [5] = 'satchel', [6] = 'sack', [7] = 'case' }
 
 ---------------------------------------------------------------------
 -- Finds all equipped linkshells. Returns an array of up to two
@@ -139,9 +139,6 @@ local LINKSHELL_BAG_NAMES_BY_ID = { [0] = 'inventory', [6] = 'sack', [7] = 'case
 -- Returns an array of equipped linkshells on success, or nil if none were found.
 --
 findEquippedLinkshells = function(player, items)
-    local linkshell_bags = { 0, 6, 7 }
-    local linkshell_bag_names = { [0] = 'inventory', [6] = 'sack', [7] = 'case' }
-
     local result = {}
     local results_by_name = {}
 
