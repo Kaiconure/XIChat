@@ -11,6 +11,7 @@ addon_state =
     player = nil,
     ls1name = nil,
     ls2name = nil,
+    server_name = nil,
     settings = nil,
     zone_time = 0,
     last_ls_check = 0,
@@ -49,11 +50,28 @@ end
 -- the default settings file name is used.
 ---------------------------------------------------------------------
 function loadSettings(fileName)
+    -- Disable settings by default
+    http.disable_logging()
+
     if addon_state.player and addon_state.player.name then
         addon_state.settings = settings_manager:load(addon_state.player.name)
-        --writeJsonToFile('./licenses/%s.processed.json':format(addon_state.player.name), addon_state.settings)
+
+        -- Enable HTTP logging if verbose output is requested
+        if addon_state.settings and addon_state.settings.config and addon_state.settings.config.http_logging then
+            http.enable_logging(addon_state.player.name)
+        end
     else
         addon_state.settings = nil
+    end
+end
+
+function queryServerName()
+    if addon_state.server_name == nil then
+        local player = windower.ffxi.get_player()
+        if player then
+            writeMessage(colorize(ChatColors.gray, 'Querying server name...'))
+            windower.send_command('input /servmes')
+        end
     end
 end
 
@@ -219,6 +237,7 @@ function MessageSenderCoRoutine()
                 settings and
                 addon_state.player and
                 settings.player_name == addon_state.player.name and
+                type(item.server_name) == 'string' and
                 type(settings.service_host) == 'string'
             then
                 local config = 
@@ -230,7 +249,8 @@ function MessageSenderCoRoutine()
                     config and
                     type(config.api_key) == 'string' and
                     type(config.linkshell) == 'string' and
-                    config.linkshell == item.linkshell_name
+                    config.linkshell == item.linkshell_name and
+                    config.server_name == item.server_name
 
                 if is_valid then
                     local sanitized_message = item.message
@@ -258,9 +278,10 @@ function MessageSenderCoRoutine()
 
                     local response = http.send_request(request)
                     if settings.config.verbose then
-                        print('%s queued payload:\r\n  Player: %s\r\n  Linkshell: %s\r\n  Message: [%s]':format(
+                        print('%s queued payload:\r\n  Player: %s\r\n  Server: %s\r\n  Linkshell: %s\r\n  Message: [%s]':format(
                             response and response.success and 'Successfully' or 'Unsuccessfully',
                             item.player_name,
+                            item.server_name,
                             item.linkshell_name,
                             item.message
                         ))

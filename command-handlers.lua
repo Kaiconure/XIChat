@@ -23,7 +23,7 @@ CommandHandlers['colortest'] = function (...)
 end
 
 CommandHandlers['lslist'] = function(...)
-    writeMessage('Tracked Linkshells:')
+    writeMessage('Tracked Linkshells on %s':format(colorize(ChatColors.green, addon_state.server_name or '<unknown server>')))
     writeMessage('  Slot #1: %s %s':format(
         colorize(ChatColors.green, addon_state.ls1 and addon_state.ls1.name or '<none>'),
         colorize(ChatColors.yellow, addon_state.ls1 and addon_state.ls1.type or '')))
@@ -31,3 +31,5 @@ CommandHandlers['lslist'] = function(...)
         colorize(ChatColors.green, addon_state.ls2 and addon_state.ls2.name or '<none>'),
         colorize(ChatColors.yellow, addon_state.ls2 and addon_state.ls2.type or '')))
 end
+
+CommandHandlers['list'] = CommandHandlers['lslist']

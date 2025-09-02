@@ -1,4 +1,4 @@
-local HTTP_DLL_VERSION  = '12'
+local HTTP_DLL_VERSION  = '15'
 local HTTP_DLL_NAME     = 'windower_http%s':format(HTTP_DLL_VERSION)
 local ADDON_PATH        = windower.addon_path:gsub('\\', '/'):gsub('//', '/')
 
@@ -58,6 +58,15 @@ helper.send_request = function(request)
         payload = payload,
         headers = headers
     }
+end
+
+helper.enable_logging = function(name)
+    print('XIChat: Enabling verbose HTTP logging!')
+    helper.http.configure_logging(true, name)
+end
+
+helper.disable_logging = function()
+    helper.http.configure_logging(false)
 end
 
 return helper

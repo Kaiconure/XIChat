@@ -49,18 +49,34 @@ function manager:load(player_name)
     local result = self:empty(player_name)
 
     for _linkshell, lsconfig in pairs(settings.linkshells) do
-        local linkshell = string.gsub(tostring(_linkshell) or '', '[^A-Za-z]', '')
-        local api_key = lsconfig.api_key
-        if linkshell ~= '' and type(api_key) == 'string' then
-            
-            -- Api keys always start with the player name, case-sensitive
-            local name_match = '^' .. player_name .. '%-'
-            if string.match(api_key, name_match) then                
-                result.linkshells[linkshell] = {
-                    linkshell = linkshell,
-                    api_key = api_key
-                }
-                num_results = num_results + 1
+        if type(_linkshell) == 'string' then
+            local separator = string.find(_linkshell, '@') or 0
+            if separator > 1 then
+                local linkshell = string.sub(_linkshell, 1, separator - 1)
+                local server = string.sub(_linkshell, separator + 1)
+
+                linkshell = string.gsub(tostring(linkshell) or '', '[^A-Za-z]', '')
+                server = string.gsub(tostring(server) or '', '[^A-Za-z]', '')
+                local api_key = lsconfig.api_key
+                if
+                    (linkshell and linkshell ~= '') and
+                    (server and server ~= '') and
+                    type(api_key) == 'string' 
+                then
+                    
+                    -- Api keys always start with the player name, case-sensitive
+                    local name_match = '^' .. player_name .. '%-'
+                    if string.match(api_key, name_match) then                
+                        result.linkshells[linkshell] = {
+                            linkshell = linkshell,
+                            server_name = server,
+                            api_key = api_key
+                        }
+                        num_results = num_results + 1
+
+                        --print('API key detected for linkshell [%s] on [%s]':format(linkshell, server))
+                    end
+                end
             end
         end
     end

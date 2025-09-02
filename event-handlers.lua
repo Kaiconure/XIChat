@@ -12,10 +12,13 @@ function addon_onLoad()
     coroutine.schedule(QueryLinkshellStateCoRoutine, 5)
 
     showWelcomeMessage()
+
+    queryServerName()
     queryEquippedLinkshells('load', true)
 end
 
 function addon_onUnload()
+    addon_state.server_name = nil
     addon_state.player = nil
 
     return
@@ -27,13 +30,18 @@ function addon_onLogin(name)
     loadSettings()
 
     showWelcomeMessage()
+
+    -- The server name *should* be queried automatically at login
+    --queryServerName()
+
     queryEquippedLinkshells('login', true)
 end
 
 function addon_onLogout(name)
-    --
-    -- An event handler for when a character logs in
-    --
+    http.disable_logging()
+
+    addon_state.server_name = nil
+    addon_state.player = nil
 
     return
 end
@@ -61,6 +69,18 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
             end
         end
         
+        return
+    end
+
+    ---------------------------------------------------------------------------------
+    -- Output from /servmes (server info)
+    if original_mode == 0x0C8 then
+        local servername = string.match(original_message, '^<<< Welcome to (%a+)! >>>*$')
+        if servername then
+            addon_state.server_name = servername
+            writeMessage(colorize(ChatColors.gray, 'Detected server name: %s':format(colorize(ChatColors.green, servername))))
+        end
+
         return
     end
 
@@ -93,6 +113,7 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 timestamp = makePortableTimestamp(),
                 player_name = addon_state.player.name,
                 linkshell_name = addon_state.ls1name,
+                server_name = addon_state.server_name,
                 message = original_message
             })
         end
@@ -112,6 +133,7 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 timestamp = makePortableTimestamp(),
                 player_name = addon_state.player.name,
                 linkshell_name = addon_state.ls2name,
+                server_name = addon_state.server_name,
                 message = original_message
             })
         end
