@@ -44,4 +44,5 @@ luac.out
 /licenses/*
 /dll/*
 /XIChat/*
+/config/*
 
