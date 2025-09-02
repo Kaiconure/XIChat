@@ -8,6 +8,9 @@ You can get the latest release [here](https://github.com/Kaiconure/XIChat/releas
 
 *Note: Because this addon uses an online service, API keys are required for it to work.*
 
+## Installation guide
+You can view our step-by-step setup guide [here](https://github.com/Kaiconure/XIChat/wiki/Installation-and-Setup-Guide).
+
 ## How does it work?
 
 API keys are issued based on your player/character/toon name, linkshell name, and server name. They will come in the form of a JSON configuration file which can be dropped into the "licenses" folder under the addon.
