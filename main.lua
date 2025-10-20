@@ -11,6 +11,7 @@ addon_state =
     player = nil,
     ls1name = nil,
     ls2name = nil,
+    server_id = nil,
     server_name = nil,
     settings = nil,
     zone_time = 0,
@@ -49,30 +50,64 @@ end
 -- Loads settings from a file. If no file name is provided,
 -- the default settings file name is used.
 ---------------------------------------------------------------------
-function loadSettings(fileName)
+function loadSettings(reload, game_info)
+
+    -- Do nothing if settings have already been loaded, unless the reload flag is set
+    if addon_state.settings and not reload then
+        return addon_state.settings
+    end
+
+    -- Do nothing if we're not currently logged in, but clear the settings in that case.
+    local info = game_info or windower.ffxi.get_info()
+    if not info or not info.logged_in then
+        addon_state.settings = nil
+        return
+    end
+
     -- Disable settings by default
     http.disable_logging()
 
     if addon_state.player and addon_state.player.name then
-        addon_state.settings = settings_manager:load(addon_state.player.name)
+        fetchServerName()
 
-        -- Enable HTTP logging if verbose output is requested
-        if addon_state.settings and addon_state.settings.config and addon_state.settings.config.http_logging then
-            http.enable_logging(addon_state.player.name)
+        if addon_state.server_name then
+            --print('loadSettings: Found server name %s with player %s':format(addon_state.server_name, addon_state.player.name))
+
+            addon_state.settings = settings_manager:load(addon_state.player.name, addon_state.server_name)
+
+            -- Enable HTTP logging if verbose output is requested
+            if addon_state.settings and addon_state.settings.config and addon_state.settings.config.http_logging then
+                http.enable_logging(addon_state.player.name)
+            end
         end
     else
         addon_state.settings = nil
     end
+
+    return addon_state.settings
 end
 
-function queryServerName()
-    if addon_state.server_name == nil then
-        local player = windower.ffxi.get_player()
-        if player then
-            writeMessage(colorize(ChatColors.gray, 'Querying server name...'))
-            windower.send_command('input /servmes')
+function fetchServerName()
+    local info = windower.ffxi.get_info()
+
+    if info and info.logged_in then
+        local server_id = type(info.server) == 'number' and info.server
+        local server = resources.servers[server_id]
+
+        addon_state.server_id = server and server.id
+        addon_state.server_name = server and server.en
+
+        if addon_state.server_name then
+            writeMessage(colorize(ChatColors.gray, 'Loaded server name: %s (%s)':format(
+                colorize(ChatColors.green, addon_state.server_name, ChatColors.gray),
+                colorize(ChatColors.babyblue, addon_state.server_id, ChatColors.gray)
+            )))
         end
+    else
+        addon_state.server_name = nil
     end
+
+    return addon_state.server_name
 end
 
 ---------------------------------------------------------------------
@@ -219,78 +254,126 @@ function MessageSenderCoRoutine()
         return
     end
 
-    -- addon_state.processor_running = true
+    addon_state.processor_running = true
 
-    while true do
-        local settings = addon_state.settings
-        local num_sent = 0
+    while not addon_state.unloading do
+        local info = windower.ffxi.get_info()
+        local sleep_time = 1
 
-        while
-            message_queue:size() > 0 and
-            num_sent < 5
-        do
-            --print('queue size: %d':format(message_queue:size()))
-            local item = message_queue:dequeue()
+        if info.logged_in then
+            -- Note: The load settings function will no-op and return the existing settings by default. However,
+            -- if the first parameter is true, it will forcibly reload the settings from scratch. In this case,
+            -- we will force a reload if the current game server doesn't match the server we loaded settings for.
+            -- It's unfortunate that we need this, but I've observed behavior where the server is incorrectly
+            -- detected on the very first login after loading up the game. Windower said we were on Asura when
+            -- we were actually on Bahamut, for whatever reason.
+            local settings = loadSettings(
+                info.server ~= addon_state.server_id,
+                info
+            )
 
-            if
-                type(item) == 'table' and
+            local num_sent = 0
+
+            while
+                not addon_state.unloading and
                 settings and
-                addon_state.player and
-                settings.player_name == addon_state.player.name and
-                type(item.server_name) == 'string' and
-                type(settings.service_host) == 'string'
-            then
-                local config = 
-                    addon_state.settings and
-                    addon_state.settings.linkshells and
-                    addon_state.settings.linkshells[item.linkshell_name]
+                message_queue:size() > 0 and
+                num_sent < 5
+            do
+                --print('queue size: %d':format(message_queue:size()))
+                local item = message_queue:dequeue()
+                if
+                    type(item) == 'table' and
+                    
+                    addon_state.player and
+                    settings.player_name == addon_state.player.name and
+                    
+                    type(item.server_name) == 'string' and
+                    item.server_name == addon_state.server_name and
+                    
+                    type(item.mode) == 'string' and
+                    type(settings.service_host) == 'string'
+                then
 
-                local is_valid = 
-                    config and
-                    type(config.api_key) == 'string' and
-                    type(config.linkshell) == 'string' and
-                    config.linkshell == item.linkshell_name and
-                    config.server_name == item.server_name
+                    local config = nil
+                    local is_valid = false
+                    local endpoint = nil
 
-                if is_valid then
-                    local sanitized_message = item.message
+                    if 
+                        item.mode == 'tell' or
+                        item.mode == 'party' or
+                        item.mode == 'experience' or
+                        item.mode == 'zone' or
+                        item.mode == 'interaction'
+                    then
+                        config = 
+                            addon_state.settings and
+                            addon_state.settings.personal and
+                            addon_state.settings.personal[item.player_name]
+                        is_valid = config and
+                            type(config.api_key) == 'string' and
+                            type(config.player_name) == 'string' and
+                                config.player_name == item.player_name and
+                            config.server_name == item.server_name
+                        
+                        endpoint = 'personal'
+                    elseif item.mode == 'linkshell' then
+                        config = 
+                            addon_state.settings and
+                            addon_state.settings.linkshells and
+                            addon_state.settings.linkshells[item.linkshell_name]
+                        is_valid = config and
+                            type(config.api_key) == 'string' and
+                            type(config.linkshell) == 'string' and
+                            type(config.player_name) == 'string' and
+                                config.player_name == item.player_name and
+                            config.linkshell == item.linkshell_name and
+                            config.server_name == item.server_name
 
-                    -- writeJsonToFile(
-                    --     '/data/messages/%.2f-linkshell.json':format(os.clock()),
-                    --     { message = sanitized_message }
-                    -- )
+                        endpoint = 'ls'
 
-                    sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_START_GSUB, '{')
-                    sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_END_GSUB, '}')
-                    sanitized_message = string.gsub(sanitized_message, '[^%a%d%p ]', '')
+                        -- writeJsonToFile('./data/stringify/item.json', item)
+                        -- writeJsonToFile('./data/stringify/addon_state.json', addon_state)
+                        -- writeJsonToFile('./data/stringify/config.json', config)
+                    end
 
-                    item.message = sanitized_message
+                    if is_valid then
+                        local sanitized_message = item.message
 
-                    local request = {
-                        url = 'https://%s/api/messages/ls':format(settings.service_host),
-                        method = 'POST',
-                        headers = http.make_headers({
-                                ['Authorization'] = 'Bearer ' .. config.api_key
-                            }),
-                        payload = http.make_payload(item),
-                        immediate = true
-                    }
+                        sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_START_GSUB, '{')
+                        sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_END_GSUB, '}')
+                        sanitized_message = string.gsub(sanitized_message, '[^%a%d%p ]', '')
 
-                    local response = http.send_request(request)
-                    if settings.config.verbose then
-                        print('%s queued payload:\r\n  Player: %s\r\n  Server: %s\r\n  Linkshell: %s\r\n  Message: [%s]':format(
-                            response and response.success and 'Successfully' or 'Unsuccessfully',
-                            item.player_name,
-                            item.server_name,
-                            item.linkshell_name,
-                            item.message
-                        ))
+                        item.message = sanitized_message
+
+                        local request = {
+                            url = 'https://%s/api/messages/%s':format(settings.service_host, endpoint),
+                            method = 'POST',
+                            headers = http.make_headers({
+                                    ['Authorization'] = 'Bearer ' .. config.api_key
+                                }),
+                            payload = http.make_payload(item),
+                            immediate = true
+                        }
+
+                        local response = http.send_request(request)
+                        if settings.config.verbose then
+                            print('%s queued payload:\r\n  Player: %s\r\n  Server: %s\r\n  Linkshell: %s\r\n  Message: [%s]':format(
+                                response and response.success and 'Successfully' or 'Unsuccessfully',
+                                item.player_name,
+                                item.server_name,
+                                item.linkshell_name or 'n/a',
+                                item.message
+                            ))
+                        end
                     end
                 end
-            end
 
-            num_sent = num_sent + 1
-            coroutine.sleep(0.5)
+                num_sent = num_sent + 1
+                coroutine.sleep(0.5)
+            end
+        else
+            sleep_time = 2
         end
 
         coroutine.sleep(1)

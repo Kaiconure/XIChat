@@ -4,6 +4,7 @@
 
 function addon_onLoad()
     addon_state.player = windower.ffxi.get_player()
+    --print('addon_onLoad: Player=%s':format(addon_state.player and addon_state.player.name or 'nil'))
 
     loadSettings()
 
@@ -13,26 +14,28 @@ function addon_onLoad()
 
     showWelcomeMessage()
 
-    queryServerName()
+    --print('addon_onLoad: Has settings? %s':format(addon_state.settings and 'Yes' or 'No'))
+
     queryEquippedLinkshells('load', true)
 end
 
 function addon_onUnload()
+    addon_state.unloading = true
+
+    addon_state.server_id = nil
     addon_state.server_name = nil
     addon_state.player = nil
-
-    return
+    addon_state.settings = nil
 end
 
 function addon_onLogin(name)
     addon_state.player = windower.ffxi.get_player()
+    --print('addon_onLogin: Player=%s':format(addon_state.player and addon_state.player.name or 'nil'))
 
     loadSettings()
-
     showWelcomeMessage()
 
-    -- The server name *should* be queried automatically at login
-    --queryServerName()
+    --print('addon_onLogin: Has settings? %s':format(addon_state.settings and 'Yes' or 'No'))
 
     queryEquippedLinkshells('login', true)
 end
@@ -40,10 +43,10 @@ end
 function addon_onLogout(name)
     http.disable_logging()
 
+    addon_state.server_id = nil
     addon_state.server_name = nil
     addon_state.player = nil
-
-    return
+    addon_state.settings = nil
 end
 
 function addon_onLinkshellChange(new_name, old_name)
@@ -52,6 +55,88 @@ end
 
 function addon_onZoneChange(new_zone_id, old_zone_id)
     addon_state.zone_time = os.clock()
+
+    local old_zone = old_zone_id and resources.zones and resources.zones[old_zone_id]
+    local zone = resources.zones and resources.zones[new_zone_id]
+
+    if zone then
+        local me = windower.ffxi.get_player()
+        local info = windower.ffxi.get_info()
+
+        local message = nil
+        if old_zone then
+            message = '%s has zoned into %s from %s.':format(
+                me and me.name or 'Player',
+                zone.name,
+                old_zone.name
+            )
+        else
+            message = '%s has Zoned into %s.':format(
+                me and me.name or 'Player',
+                zone.name
+            )
+        end
+
+        message_queue:enqueue({
+            timestamp = makePortableTimestamp(),
+            player_name = addon_state.player.name,
+            server_name = addon_state.server_name,
+            message = message,
+            mode = 'zone'
+        })
+    end
+end
+
+function addon_onExamined(examined_by, examined_by_index)
+    if type(examined_by) == 'string' then
+        local me = windower.ffxi.get_mob_by_target('me')
+
+        message_queue:enqueue({
+            timestamp = makePortableTimestamp(),
+            player_name = addon_state.player.name,
+            server_name = addon_state.server_name,
+            message = '%s has examined %s.':format(examined_by, me and me.name or 'you'),
+            mode = 'interaction'
+        })
+    end
+end
+
+function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
+
+    local target = target_id and windower.ffxi.get_mob_by_id(target_id)
+    if not target then
+        return
+    end
+
+    local me = windower.ffxi.get_mob_by_target('me')
+    if not me then
+        return
+    end
+
+    local emote = emote_id and resources.emotes and resources.emotes[emote_id]
+    local sender = sender_id and windower.ffxi.get_mob_by_id(sender_id)
+    
+
+    if target then
+        if 
+            target.id == me.id or
+            target.spawn_type == 13 -- 13 seems to be the spawn type for player party members
+        then
+            local message = '%s receved [%s] emote from %s.':format(
+                target.name,
+                emote and emote.command or 'unknown',
+                sender and sender.name or 'unknown'
+            )
+
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = message,
+                mode = 'interaction'
+            })
+        end
+    end
 end
 
 function addon_onIncomingText(original_message, modified_message, original_mode, modified_mode, blocked)
@@ -74,15 +159,15 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
 
     ---------------------------------------------------------------------------------
     -- Output from /servmes (server info)
-    if original_mode == 0x0C8 then
-        local servername = string.match(original_message, '^<<< Welcome to (%a+)! >>>*$')
-        if servername then
-            addon_state.server_name = servername
-            writeMessage(colorize(ChatColors.gray, 'Detected server name: %s':format(colorize(ChatColors.green, servername))))
-        end
+    -- if original_mode == 0x0C8 then
+    --     local servername = string.match(original_message, '^<<< Welcome to (%a+)! >>>*$')
+    --     if servername then
+    --         addon_state.server_name = servername
+    --         writeMessage(colorize(ChatColors.gray, 'Detected server name: %s':format(colorize(ChatColors.green, servername))))
+    --     end
 
-        return
-    end
+    --     return
+    -- end
 
     ---------------------------------------------------------------------------------
     -- Output from /ls2mes (linkshell 2 info)
@@ -114,7 +199,8 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 player_name = addon_state.player.name,
                 linkshell_name = addon_state.ls1name,
                 server_name = addon_state.server_name,
-                message = original_message
+                message = original_message,
+                mode = 'linkshell'
             })
         end
 
@@ -134,9 +220,38 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 player_name = addon_state.player.name,
                 linkshell_name = addon_state.ls2name,
                 server_name = addon_state.server_name,
-                message = original_message
+                message = original_message,
+                mode = 'linkshell'
             })
         end
+
+        return
+    end
+
+    ---------------------------------------------------------------------------------
+    -- Tell incoming (12) or outgoing (4)
+    if original_mode == 12 or original_mode == 4 then
+        message_queue:enqueue({
+            timestamp = makePortableTimestamp(),
+            player_name = addon_state.player.name,
+            server_name = addon_state.server_name,
+            message = original_message,
+            mode = 'tell'
+        })
+
+        return
+    end
+
+    ---------------------------------------------------------------------------------
+    -- Party incoming (13) or outgoing (5)
+    if original_mode == 13 or original_mode == 5 then
+        message_queue:enqueue({
+            timestamp = makePortableTimestamp(),
+            player_name = addon_state.player.name,
+            server_name = addon_state.server_name,
+            message = original_message,
+            mode = 'party'
+        })
 
         return
     end
