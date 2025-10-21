@@ -54,6 +54,12 @@ function addon_onLinkshellChange(new_name, old_name)
 end
 
 function addon_onZoneChange(new_zone_id, old_zone_id)
+
+    -- Exit early of this message type is not allowed
+    if not isPersonalMessageTypeAllowed('zone') then
+        return
+    end
+
     addon_state.zone_time = os.clock()
 
     local old_zone = old_zone_id and resources.zones and resources.zones[old_zone_id]
@@ -88,6 +94,11 @@ function addon_onZoneChange(new_zone_id, old_zone_id)
 end
 
 function addon_onExamined(examined_by, examined_by_index)
+    -- Exit early of this message type is not allowed
+    if not isPersonalMessageTypeAllowed('examine') then
+        return
+    end
+
     if type(examined_by) == 'string' then
         local me = windower.ffxi.get_mob_by_target('me')
 
@@ -103,6 +114,11 @@ end
 
 function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
 
+    -- Exit early of this message type is not allowed
+    if not isPersonalMessageTypeAllowed('emote') then
+        return
+    end
+
     local target = target_id and windower.ffxi.get_mob_by_id(target_id)
     if not target then
         return
@@ -114,18 +130,17 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
     end
 
     local emote = emote_id and resources.emotes and resources.emotes[emote_id]
-    local sender = sender_id and windower.ffxi.get_mob_by_id(sender_id)
-    
+    local sender = sender_id and windower.ffxi.get_mob_by_id(sender_id)    
 
     if target then
         if 
             target.id == me.id or
             target.spawn_type == 13 -- 13 seems to be the spawn type for player party members
         then
-            local message = '%s receved [%s] emote from %s.':format(
+            local message = '%s received a [%s] emote from %s.':format(
                 target.name,
-                emote and emote.command or 'unknown',
-                sender and sender.name or 'unknown'
+                capitalizeFirst(emote and emote.command or 'Unknown'),
+                sender and sender.name or 'Unknown'
             )
 
             message_queue:enqueue({
@@ -231,6 +246,11 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
     ---------------------------------------------------------------------------------
     -- Tell incoming (12) or outgoing (4)
     if original_mode == 12 or original_mode == 4 then
+        -- Exit early of this message type is not allowed
+        if not isPersonalMessageTypeAllowed('tell') then
+            return
+        end
+
         message_queue:enqueue({
             timestamp = makePortableTimestamp(),
             player_name = addon_state.player.name,
@@ -245,6 +265,11 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
     ---------------------------------------------------------------------------------
     -- Party incoming (13) or outgoing (5)
     if original_mode == 13 or original_mode == 5 then
+        -- Exit early of this message type is not allowed
+        if not isPersonalMessageTypeAllowed('party') then
+            return
+        end
+
         message_queue:enqueue({
             timestamp = makePortableTimestamp(),
             player_name = addon_state.player.name,

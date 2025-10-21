@@ -46,6 +46,30 @@ function showWelcomeMessage()
         '  https://github.com/Kaiconure/XIChat')
 end
 
+function isPersonalMessageTypeAllowed(message_type)
+    -- Personal messages are only allowed when a proper personal settings object is configured,
+    -- and the message type isn't excluded. This doesn't account for other factors, and simply
+    -- matches up the message type with the currently active personal message type exclusions.
+    if type(message_type) == 'string' then
+        local player_name = addon_state.player and addon_state.player.name
+
+        if player_name then
+            local personal = addon_state.settings and
+                addon_state.settings.personal and
+                addon_state.settings.personal[player_name]
+
+            if personal then
+                message_type = string.lower(message_type)
+                if not personal.exclude[message_type] then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 ---------------------------------------------------------------------
 -- Loads settings from a file. If no file name is provided,
 -- the default settings file name is used.

@@ -195,3 +195,13 @@ findEquippedLinkshells = function(player, items)
 
     return result, results_by_name
 end
+
+function capitalizeFirst(str)
+    if type(str) ~= 'string' then
+        str = tostring(str)
+    end
+
+    if str then
+        return (str:gsub("^%l", string.upper))
+    end
+end

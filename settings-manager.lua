@@ -110,12 +110,25 @@ function manager:load(player_name, server_name)
                     
                     -- Api keys always start with the player name, case-sensitive
                     local name_match = '^' .. player_name .. '%-'
-                    if string.match(api_key, name_match) then                
+                    if string.match(api_key, name_match) then
+                        local excludes = {}
+
+                        -- Create a keyed table based on the exclusion types
+                        if type(personalconfig.exclude) == 'table' and #personalconfig.exclude > 0 then
+                            for i, exclusion in ipairs(personalconfig.exclude) do
+                                if type(exclusion) == 'string' then
+                                    excludes[string.lower(exclusion)] = true
+                                end
+                            end
+                        end
+
                         result.personal[player_name] = {
                             player_name = player_name,
                             server_name = server,
-                            api_key = api_key
+                            api_key = api_key,
+                            exclude = excludes
                         }
+
                         num_results = num_results + 1
                     end
                 end
