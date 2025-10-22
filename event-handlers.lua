@@ -342,6 +342,34 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
 
         return
     end
+
+    -- Error messages. Some of these should be sent as notifications.
+    if original_mode == 123 then
+
+        local is_failed_tell = string.find(original_message, 'Your tell was not received')
+        if is_failed_tell then
+            if not isPersonalMessageTypeAllowed('tell') then
+                return
+            end
+
+            local sanitized = string.gsub(string.sub(original_message, is_failed_tell, -2), '[^%a%d%p ]', '')
+
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = sanitized,
+                mode = 'tell'
+            })
+
+            return
+        end
+    end
+
+    -- local test = string.find(original_message, 'Your tell was not received')
+    -- if test then
+    --     print('Found match with id=%d [%s]':format(original_mode, original_message))
+    -- end
 end
 
 function addon_onIncomingChunk(id, original, modified, injected, blocked)
