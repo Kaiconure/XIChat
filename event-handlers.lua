@@ -53,6 +53,47 @@ function addon_onLinkshellChange(new_name, old_name)
     queryEquippedLinkshells('linkshell_change', false)
 end
 
+function addon_onStatusChange(new_status_id, old_status_id)
+    if type(new_status_id) == 'number' then
+        -- Relevant Status values:
+        --  0: Idle
+        --  1: Engaged
+        --  2: Dead
+        --  3: Engaged Dead
+        if 
+            (new_status_id == 2 or new_status_id == 3) and  -- To: KO
+            (old_status_id ~= 2 and old_status_id ~= 3)     -- From: non-KO
+        then
+            if not isPersonalMessageTypeAllowed('defeat') then
+                return
+            end
+
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = '%s has been defeated.':format(addon_state.player.name),
+                mode = 'defeat'
+            })
+        elseif
+            (new_status_id ~= 2 and new_status_id ~= 3) and -- To: non-KO
+            (old_status_id == 2 or old_status_id == 3)      -- From: KO
+        then
+            if not isPersonalMessageTypeAllowed('defeat') then
+                return
+            end
+
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = '%s has returned from defeat.':format(addon_state.player.name),
+                mode = 'defeat'
+            })
+        end
+    end
+end
+
 function addon_onZoneChange(new_zone_id, old_zone_id)
 
     -- Exit early of this message type is not allowed
@@ -107,7 +148,8 @@ function addon_onExamined(examined_by, examined_by_index)
             player_name = addon_state.player.name,
             server_name = addon_state.server_name,
             message = '%s has examined %s.':format(examined_by, me and me.name or 'you'),
-            mode = 'interaction'
+            mode = 'interaction',
+            sub_mode = 'examine'
         })
     end
 end
@@ -148,7 +190,8 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
                 player_name = addon_state.player.name,
                 server_name = addon_state.server_name,
                 message = message,
-                mode = 'interaction'
+                mode = 'interaction',
+                sub_mode = 'emote'
             })
         end
     end
@@ -251,13 +294,24 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
             return
         end
 
-        message_queue:enqueue({
-            timestamp = makePortableTimestamp(),
-            player_name = addon_state.player.name,
-            server_name = addon_state.server_name,
-            message = original_message,
-            mode = 'tell'
-        })
+        -- We need to sanitize the message for this part, to strip control characters out of the first part at least.
+        -- The purpose of this code is to identify *actual* tells rather than addons which annoying try to send
+        -- fake tells to communicate with you.
+        local sanitized = string.gsub(original_message, '[^%a%d%p ]', '')
+        local is_valid_outgoing = 
+            string.match(sanitized, '^>>%a+ : ')    -- >>Kaladin : Hello, world!    [A tell to Kaladin]
+        local is_valid_incoming = not is_valid_outgoing 
+            and string.match(sanitized, '^%a+>> ')  -- Kaladin>> Hey to you!        [A tell from Kaladin]
+
+        if is_valid_incoming or is_valid_outgoing then
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = original_message,
+                mode = 'tell'
+            })
+        end
 
         return
     end

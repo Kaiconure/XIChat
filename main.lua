@@ -328,7 +328,8 @@ function MessageSenderCoRoutine()
                         item.mode == 'party' or
                         item.mode == 'experience' or
                         item.mode == 'zone' or
-                        item.mode == 'interaction'
+                        item.mode == 'interaction' or
+                        item.mode == 'defeat'
                     then
                         config = 
                             addon_state.settings and
