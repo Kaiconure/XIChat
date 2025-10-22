@@ -324,13 +324,21 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
             return
         end
 
-        message_queue:enqueue({
-            timestamp = makePortableTimestamp(),
-            player_name = addon_state.player.name,
-            server_name = addon_state.server_name,
-            message = original_message,
-            mode = 'party'
-        })
+        -- We need to sanitize the message for this part, to strip control characters out of the first part at least.
+        -- The purpose of this code is to identify *actual* party chat rather than addons which annoyingly try to
+        -- send fake messages to communicate with you.
+        local sanitized = string.gsub(original_message, '[^%a%d%p ]', '')
+        local is_valid = string.match(sanitized, '^%(%a+%) ')    -- (Kaladin) Hello, World!
+
+        if is_valid then
+            message_queue:enqueue({
+                timestamp = makePortableTimestamp(),
+                player_name = addon_state.player.name,
+                server_name = addon_state.server_name,
+                message = original_message,
+                mode = 'party'
+            })
+        end
 
         return
     end
