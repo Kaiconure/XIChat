@@ -70,6 +70,28 @@ function isPersonalMessageTypeAllowed(message_type)
     return false
 end
 
+function isPersonalMessageSenderIgnored(sender_name)
+    -- Personal messages are only allowed when the sender isn't in the ignore list.
+    if type(sender_name) == 'string' then
+        local player_name = addon_state.player and addon_state.player.name
+
+        if player_name then
+            local personal = addon_state.settings and
+                addon_state.settings.personal and
+                addon_state.settings.personal[player_name]
+
+            if personal then
+                sender_name = string.lower(sender_name)
+                if personal.ignore_from[sender_name] then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 ---------------------------------------------------------------------
 -- Loads settings from a file. If no file name is provided,
 -- the default settings file name is used.
@@ -340,6 +362,15 @@ function MessageSenderCoRoutine()
                             type(config.player_name) == 'string' and
                                 config.player_name == item.player_name and
                             config.server_name == item.server_name
+
+                        -- Filter out excluded message types and ignored senders
+                        if is_valid then
+                            if not isPersonalMessageTypeAllowed(item.mode) then
+                                is_valid = false
+                            elseif isPersonalMessageSenderIgnored(item.sender) then
+                                is_valid = false
+                            end
+                        end
                         
                         endpoint = 'personal'
                     elseif item.mode == 'linkshell' then
@@ -356,10 +387,6 @@ function MessageSenderCoRoutine()
                             config.server_name == item.server_name
 
                         endpoint = 'ls'
-
-                        -- writeJsonToFile('./data/stringify/item.json', item)
-                        -- writeJsonToFile('./data/stringify/addon_state.json', addon_state)
-                        -- writeJsonToFile('./data/stringify/config.json', config)
                     end
 
                     if is_valid then

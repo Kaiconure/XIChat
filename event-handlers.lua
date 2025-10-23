@@ -149,7 +149,8 @@ function addon_onExamined(examined_by, examined_by_index)
             server_name = addon_state.server_name,
             message = '%s has examined %s.':format(examined_by, me and me.name or 'you'),
             mode = 'interaction',
-            sub_mode = 'examine'
+            sub_mode = 'examine',
+            sender = examined_by
         })
     end
 end
@@ -177,7 +178,9 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
     if target then
         if 
             target.id == me.id or
-            target.spawn_type == 13 -- 13 seems to be the spawn type for player party members
+            (sender and sender.id == me.id) or
+            (sender and sender.spawn_type == 13) or -- 13 seems to be the spawn type for player party members
+            target.spawn_type == 13
         then
             local message = '%s received a [%s] emote from %s.':format(
                 target.name,
@@ -191,7 +194,8 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
                 server_name = addon_state.server_name,
                 message = message,
                 mode = 'interaction',
-                sub_mode = 'emote'
+                sub_mode = 'emote',
+                sender = sender and sender.name
             })
         end
     end
@@ -299,9 +303,9 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
         -- fake tells to communicate with you.
         local sanitized = string.gsub(original_message, '[^%a%d%p ]', '')
         local is_valid_outgoing = 
-            string.match(sanitized, '^>>%a+ : ')    -- >>Kaladin : Hello, world!    [A tell to Kaladin]
+            string.match(sanitized, '^>>(%a+) : ')    -- >>Kaladin : Hello, world!    [A tell to Kaladin]
         local is_valid_incoming = not is_valid_outgoing 
-            and string.match(sanitized, '^%a+>> ')  -- Kaladin>> Hey to you!        [A tell from Kaladin]
+            and string.match(sanitized, '^(%a+)>> ')  -- Kaladin>> Hey to you!        [A tell from Kaladin]
 
         if is_valid_incoming or is_valid_outgoing then
             message_queue:enqueue({
@@ -309,7 +313,8 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 player_name = addon_state.player.name,
                 server_name = addon_state.server_name,
                 message = original_message,
-                mode = 'tell'
+                mode = 'tell',
+                sender = is_valid_outgoing or is_valid_incoming -- Note: The match checks are set up so they will capture the other party's name
             })
         end
 
@@ -328,7 +333,7 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
         -- The purpose of this code is to identify *actual* party chat rather than addons which annoyingly try to
         -- send fake messages to communicate with you.
         local sanitized = string.gsub(original_message, '[^%a%d%p ]', '')
-        local is_valid = string.match(sanitized, '^%(%a+%) ')    -- (Kaladin) Hello, World!
+        local is_valid = string.match(sanitized, '^%((%a+)%) ') -- (Kaladin) Hello, World!
 
         if is_valid then
             message_queue:enqueue({
@@ -336,7 +341,8 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
                 player_name = addon_state.player.name,
                 server_name = addon_state.server_name,
                 message = original_message,
-                mode = 'party'
+                mode = 'party',
+                sender = is_valid -- Note: The match check is set up so it will capture the party member's name
             })
         end
 

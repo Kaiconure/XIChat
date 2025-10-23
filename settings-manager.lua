@@ -112,6 +112,7 @@ function manager:load(player_name, server_name)
                     local name_match = '^' .. player_name .. '%-'
                     if string.match(api_key, name_match) then
                         local excludes = {}
+                        local ignores = {}
 
                         -- Create a keyed table based on the exclusion types
                         if type(personalconfig.exclude) == 'table' and #personalconfig.exclude > 0 then
@@ -122,11 +123,21 @@ function manager:load(player_name, server_name)
                             end
                         end
 
+                        -- Create a keyed table based on the exclusion types
+                        if type(personalconfig.ignore_from) == 'table' and #personalconfig.ignore_from > 0 then
+                            for i, ignore in ipairs(personalconfig.ignore_from) do
+                                if type(ignore) == 'string' then
+                                    ignores[string.lower(ignore)] = true
+                                end
+                            end
+                        end
+
                         result.personal[player_name] = {
                             player_name = player_name,
                             server_name = server,
                             api_key = api_key,
-                            exclude = excludes
+                            exclude = excludes,
+                            ignore_from = ignores
                         }
 
                         num_results = num_results + 1

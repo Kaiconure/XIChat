@@ -33,3 +33,13 @@ CommandHandlers['lslist'] = function(...)
 end
 
 CommandHandlers['list'] = CommandHandlers['lslist']
+
+CommandHandlers['reload'] = function(...)
+    local settings = loadSettings(true)
+    if settings then
+        writeMessage(colorize(ChatColors.green, 'XIChat Settings reloaded!'))
+    else
+        print('XIChat: Warning: Failed to reload settings!')
+    end
+end
+CommandHandlers['r'] = CommandHandlers['reload']
