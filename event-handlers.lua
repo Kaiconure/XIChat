@@ -68,11 +68,17 @@ function addon_onStatusChange(new_status_id, old_status_id)
                 return
             end
 
+            local info = windower.ffxi.get_info()
+            local zone = info and info.zone and resources.zones[info.zone]
+
             message_queue:enqueue({
                 timestamp = makePortableTimestamp(),
                 player_name = addon_state.player.name,
                 server_name = addon_state.server_name,
-                message = '%s has been defeated.':format(addon_state.player.name),
+                message = '%s has been defeated%s.':format(
+                    addon_state.player.name,
+                    zone and ' in %s':format(zone.name) or ''
+                ),
                 mode = 'defeat'
             })
         elseif
@@ -83,11 +89,17 @@ function addon_onStatusChange(new_status_id, old_status_id)
                 return
             end
 
+            local info = windower.ffxi.get_info()
+            local zone = info and info.zone and resources.zones[info.zone]
+
             message_queue:enqueue({
                 timestamp = makePortableTimestamp(),
                 player_name = addon_state.player.name,
                 server_name = addon_state.server_name,
-                message = '%s has returned from defeat.':format(addon_state.player.name),
+                message = '%s has returned from defeat%s.':format(
+                    addon_state.player.name,
+                    zone and ' in %s':format(zone.name) or ''
+                ),
                 mode = 'defeat'
             })
         end
