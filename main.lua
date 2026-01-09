@@ -397,6 +397,7 @@ function MessageSenderCoRoutine()
                         sanitized_message = string.gsub(sanitized_message, '[^%a%d%p ]', '')
 
                         item.message = sanitized_message
+                        item.client_time = makePortableTimestamp()
 
                         local request = {
                             url = 'https://%s/api/messages/%s':format(settings.service_host, endpoint),
