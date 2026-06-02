@@ -188,7 +188,7 @@ function queryEquippedLinkshells(context, force)
         addon_state.ls2name = nil
         addon_state.ls2 = nil
 
-        --print('none equipped')
+        --print('none equipped')≠
 
         return
     end
@@ -392,12 +392,20 @@ function MessageSenderCoRoutine()
                     if is_valid then
                         local sanitized_message = item.message
 
-                        sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_START_GSUB, '{')
-                        sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_END_GSUB, '}')
+                        -- sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_START_GSUB, '{')
+                        -- sanitized_message = string.gsub(sanitized_message, AUTOTRANSLATE_END_GSUB, '}')                        
+
+                        sanitized_message = windower.convert_auto_trans(sanitized_message)
+
+                        -- Note: This line will strip out non-printable or non-ASCII characters. I need to 
+                        -- make this work with Japanese text at some point.
                         sanitized_message = string.gsub(sanitized_message, '[^%a%d%p ]', '')
+
+                        --sanitized_message = windower.to_shift_jis(sanitized_message)
 
                         item.message = sanitized_message
                         item.client_time = makePortableTimestamp()
+                        item.version = ADDON_VERSION
 
                         local request = {
                             url = 'https://%s/api/messages/%s':format(settings.service_host, endpoint),
@@ -406,7 +414,8 @@ function MessageSenderCoRoutine()
                                     ['Authorization'] = 'Bearer ' .. config.api_key
                                 }),
                             payload = http.make_payload(item),
-                            immediate = true
+                            immediate = true,
+                            version = ADDON_VERSION
                         }
 
                         local response = http.send_request(request)
