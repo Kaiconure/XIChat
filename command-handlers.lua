@@ -34,6 +34,28 @@ end
 
 CommandHandlers['list'] = CommandHandlers['lslist']
 
+CommandHandlers['notify'] = function (...)
+    local message = table.concat({...}, ' ')
+    if message == '' then
+        writeColoredMessage(ChatColors.red, 'Usage: //xic notify <message>')
+        return
+    end
+
+    if not addon_state.player or not addon_state.player.name or not addon_state.server_name then
+        print('XIChat: A logged-in character and server are required to send a notification.')
+        return
+    end
+
+    message_queue:enqueue({
+        timestamp = makePortableTimestamp(),
+        player_name = addon_state.player.name,
+        server_name = addon_state.server_name,
+        message = message,
+        sender = 'XIChat',
+        mode = 'notification'
+    })
+end
+
 CommandHandlers['reload'] = function(...)
     local settings = loadSettings(true)
     if settings then

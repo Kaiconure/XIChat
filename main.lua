@@ -347,6 +347,7 @@ function MessageSenderCoRoutine()
 
                     if 
                         item.mode == 'tell' or
+                        item.mode == 'notification' or
                         item.mode == 'party' or
                         item.mode == 'experience' or
                         item.mode == 'zone' or
