@@ -22,6 +22,25 @@ Matching messages are sent to a custom web service, which handles message normal
 
 **API keys should be treated like passwords.** Keep them safe.
 
+## Personal notification routing
+
+On a character without a personal license, configure a recipient with:
+
+```text
+//xic routing -name Carbonite
+```
+
+This saves `routing_recipient` in `config/<player-name>.settings.json` and takes
+effect immediately. Settings are loaded again on login or `//xic reload`.
+The Windower Send addon must be loaded, and the recipient must be running XIChat
+with a personal license that allows notifications.
+
+Incoming and outgoing tells, checks received, and targeted emotes tracked by
+XIChat are forwarded using `send Carbonite xic notify "<message>"`. Notifications
+identify the original character, for example `Steris received a tell: Kaladin>> Hello!`.
+Interactions involving Carbonite are suppressed, regardless of name casing.
+Characters with a personal license continue to use their own license and filters.
+
 ## FAQs
 
 - **How do I install my license?** Copy your license file into the `licenses` folder under `Windower4/addons/XIChat`. Either add XIChat to your init.txt, or load the addon manually with `lua load xichat`.

@@ -34,6 +34,31 @@ end
 
 CommandHandlers['list'] = CommandHandlers['lslist']
 
+CommandHandlers['routing'] = function (...)
+    local args = {...}
+    if #args ~= 2 or args[1] ~= '-name' or not args[2]:match('^%a+$') then
+        writeColoredMessage(ChatColors.red, 'Usage: //xic routing -name <player>')
+        return
+    end
+    local player = addon_state.player
+    if not player or not player.name then
+        writeColoredMessage(ChatColors.red, 'A logged-in character is required to configure routing.')
+        return
+    end
+    local recipient = capitalizeFirst(args[2]:lower())
+    if recipient:lower() == player.name:lower() then
+        writeColoredMessage(ChatColors.red, 'The routing recipient must be another character.')
+        return
+    end
+    local ok, err = pcall(settings_manager.saveRoutingRecipient, settings_manager, player.name, recipient)
+    if not ok then
+        writeColoredMessage(ChatColors.red, 'Failed to save routing settings: %s', tostring(err))
+        return
+    end
+    if addon_state.settings then addon_state.settings.routing_recipient = recipient end
+    writeMessage('Routing recipient set to: %s', colorize(ChatColors.green, recipient))
+end
+
 CommandHandlers['notify'] = function (...)
     local message = table.concat({...}, ' ')
     if message == '' then

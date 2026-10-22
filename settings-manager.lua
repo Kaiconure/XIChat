@@ -4,13 +4,32 @@ local files = require('files')      -- Lets us work with files
 local json  = require('jsonlua')    -- Lets us work with JSON
 
 function manager:empty(player_name, server_name)
+    local player_settings = self:loadPlayerSettings(player_name)
     return {
         player_name = player_name,
         server_name = server_name,
         linkshells = {},
         personal = {},
-        config = {}
+        config = {},
+        routing_recipient = player_settings.routing_recipient
     }
+end
+
+function manager:loadPlayerSettings(player_name)
+    if type(player_name) ~= 'string' or not player_name:match('^%a+$') then
+        return {}
+    end
+    local file = files.new('./config/players/%s.json':format(player_name))
+    if not file:exists() then return {} end
+    local ok, settings = pcall(json.parse, file:read() or '')
+    return ok and type(settings) == 'table' and settings or {}
+end
+
+function manager:saveRoutingRecipient(player_name, recipient)
+    local settings = self:loadPlayerSettings(player_name)
+    settings.routing_recipient = recipient
+    local file = files.new('./config/players/%s.json':format(player_name))
+    file:write(json.stringify(settings))
 end
 
 function manager:load(player_name, server_name)

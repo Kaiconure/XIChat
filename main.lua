@@ -46,6 +46,32 @@ function showWelcomeMessage()
         '  https://github.com/Kaiconure/XIChat')
 end
 
+-- Routing substitutes for a personal license; exclusions on a licensed player
+-- must not cause their messages to be forwarded through another character.
+function getRoutingRecipient()
+    local player = addon_state.player
+    local settings = addon_state.settings
+    if not player or not settings or settings.player_name ~= player.name then return end
+    if settings.personal and settings.personal[player.name] then return end
+    local recipient = settings.routing_recipient
+    if type(recipient) == 'string' and recipient:match('^%a+$')
+        and recipient:lower() ~= player.name:lower() then
+        return recipient
+    end
+end
+
+function routePersonalNotification(message, ...)
+    local recipient = getRoutingRecipient()
+    if not recipient then return end
+    for _, name in ipairs({...}) do
+        if type(name) == 'string' and name:lower() == recipient:lower() then return end
+    end
+    -- Keep chat text from introducing additional Windower commands or arguments.
+    message = windower.convert_auto_trans(message)
+    message = message:gsub('[%c";]', ' ')
+    windower.send_command('send %s xic notify "%s"':format(recipient, message))
+end
+
 function isPersonalMessageTypeAllowed(message_type)
     -- Personal messages are only allowed when a proper personal settings object is configured,
     -- and the message type isn't excluded. This doesn't account for other factors, and simply

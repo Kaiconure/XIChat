@@ -147,6 +147,10 @@ function addon_onZoneChange(new_zone_id, old_zone_id)
 end
 
 function addon_onExamined(examined_by, examined_by_index)
+    if type(examined_by) == 'string' and getRoutingRecipient() then
+        routePersonalNotification('%s was checked by %s.':format(addon_state.player.name, examined_by), examined_by)
+        return
+    end
     -- Exit early of this message type is not allowed
     if not isPersonalMessageTypeAllowed('examine') then
         return
@@ -170,7 +174,7 @@ end
 function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
 
     -- Exit early of this message type is not allowed
-    if not isPersonalMessageTypeAllowed('emote') then
+    if not isPersonalMessageTypeAllowed('emote') and not getRoutingRecipient() then
         return
     end
 
@@ -199,6 +203,12 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
                 capitalizeFirst(emote and emote.command or 'Unknown'),
                 sender and sender.name or 'Unknown'
             )
+
+            if getRoutingRecipient() then
+                routePersonalNotification('%s observed an emote: %s':format(addon_state.player.name, message),
+                    sender and sender.name or '', target.name)
+                return
+            end
 
             message_queue:enqueue({
                 timestamp = makePortableTimestamp(),
@@ -306,7 +316,7 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
     -- Tell incoming (12) or outgoing (4)
     if original_mode == 12 or original_mode == 4 then
         -- Exit early of this message type is not allowed
-        if not isPersonalMessageTypeAllowed('tell') then
+        if not isPersonalMessageTypeAllowed('tell') and not getRoutingRecipient() then
             return
         end
 
@@ -320,6 +330,12 @@ function addon_onIncomingText(original_message, modified_message, original_mode,
             and string.match(sanitized, '^(%a+)>> ')  -- Kaladin>> Hey to you!        [A tell from Kaladin]
 
         if is_valid_incoming or is_valid_outgoing then
+            if getRoutingRecipient() then
+                routePersonalNotification('%s %s a tell: %s':format(addon_state.player.name,
+                    is_valid_outgoing and 'sent' or 'received', original_message),
+                    is_valid_outgoing or is_valid_incoming)
+                return
+            end
             message_queue:enqueue({
                 timestamp = makePortableTimestamp(),
                 player_name = addon_state.player.name,
