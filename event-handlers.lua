@@ -204,11 +204,11 @@ function addon_onEmote(emote_id, sender_id, target_id, is_motion_only)
                 sender and sender.name or 'Unknown'
             )
 
-            if getRoutingRecipient() then
-                routePersonalNotification('%s observed an emote: %s':format(addon_state.player.name, message),
-                    sender and sender.name or '', target.name)
-                return
-            end
+            -- if getRoutingRecipient() then
+            --     routePersonalNotification('%s observed an emote: %s':format(addon_state.player.name, message),
+            --         sender and sender.name or '', target.name)
+            --     return
+            -- end
 
             message_queue:enqueue({
                 timestamp = makePortableTimestamp(),
